@@ -1,0 +1,464 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/assets/fonts/SpaceGrotesk.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/assets/fonts/GeistMono.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/assets/fonts/JetBrainsMono.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "General Sans";
+  src: url("/assets/fonts/GeneralSans.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Pump.Fun VolBoost Terminal — Coal Black + Electric Lime Green */
+    --background: 0.04 0 0;
+    --foreground: 0.98 0 0;
+    --card: 0.08 0 0;
+    --card-foreground: 0.98 0 0;
+    --primary: 0.79 0.265 150;
+    --primary-foreground: 0.04 0 0;
+    --secondary: 0.14 0 0;
+    --secondary-foreground: 0.98 0 0;
+    --muted: 0.22 0 0;
+    --muted-foreground: 0.58 0 0;
+    --accent: 0.79 0.265 150;
+    --accent-foreground: 0.04 0 0;
+    --border: 0.18 0 0;
+    --input: 0.1 0 0;
+    --ring: 0.79 0.265 150;
+    --radius: 0.625rem;
+    --font-display: "Space Grotesk";
+    --font-body: "General Sans";
+    --font-mono: "JetBrains Mono";
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "General Sans", "Geist Mono", monospace;
+    background-color: #0d0d0d;
+    background-image: linear-gradient(
+        45deg,
+        rgba(0, 255, 136, 0.01) 1px,
+        transparent 1px
+      ), linear-gradient(-45deg, rgba(0, 255, 136, 0.01) 1px, transparent 1px),
+      radial-gradient(
+        circle at 20% 50%,
+        rgba(0, 255, 136, 0.03) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 80% 80%,
+        rgba(0, 255, 136, 0.02) 0%,
+        transparent 50%
+      );
+    background-size: 80px 80px, 80px 80px, 100% 100%, 100% 100%;
+    position: relative;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ─── Green Border Glow (Active Card) ─────────────────────────────────────── */
+
+@keyframes greenGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(0, 255, 136, 0.5), inset 0 0 10px
+      rgba(0, 255, 136, 0.1), 0 0 40px rgba(0, 255, 136, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(0, 255, 136, 0.7), inset 0 0 16px
+      rgba(0, 255, 136, 0.15), 0 0 60px rgba(0, 255, 136, 0.12);
+  }
+}
+
+.card-green-glow {
+  animation: greenGlow 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-color: rgba(0, 255, 136, 0.6) !important;
+}
+
+/* ─── Smooth Step Transition ───────────────────────────────────────────────── */
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes springBounce {
+  0% {
+    transform: scale(0.95) translateY(8px);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.step-enter {
+  animation: springBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Progress bar fill animation ─────────────────────────────────────────── */
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 68%;
+  }
+}
+
+.progress-fill {
+  animation: progressFill 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ─── Checkmark animation ──────────────────────────────────────────────────── */
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0) rotate(-10deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15) rotate(3deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.check-pop {
+  animation: checkPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ─── Wallet loading spinner ───────────────────────────────────────────────── */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+/* ─── Pulse dot for status ─────────────────────────────────────────────────── */
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+.pulse-dot {
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+
+/* ─── Interactive Card Hover ───────────────────────────────────────────────── */
+
+@keyframes cardLift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-4px);
+  }
+}
+
+.card-interactive {
+  transition: border-color 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow
+    0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s ease-out,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-color: rgba(0, 255, 136, 0.15);
+  cursor: pointer;
+}
+.card-interactive:hover {
+  border-color: rgba(0, 255, 136, 0.45);
+  box-shadow: 0 0 24px rgba(0, 255, 136, 0.25), 0 12px 32px rgba(0, 0, 0, 0.3);
+  transform: translateY(-4px);
+}
+.card-interactive:active {
+  transform: translateY(-2px);
+}
+
+/* ─── CTA Button Glow ──────────────────────────────────────────────────────── */
+
+@keyframes buttonGlowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(0, 255, 136, 0.6);
+  }
+}
+
+.btn-cta {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background-color: #00ff88;
+  color: #0d0d0d;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.btn-cta:hover {
+  box-shadow: 0 0 32px rgba(0, 255, 136, 0.55);
+  transform: translateY(-3px) scale(1.02);
+  animation: buttonGlowPulse 1.5s ease-in-out 1;
+}
+.btn-cta:active {
+  transform: translateY(-1px) scale(0.98);
+}
+.btn-cta:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ─── Input Field Focus ────────────────────────────────────────────────────── */
+
+@keyframes inputShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.volboost-input {
+  background: #0f0f0f;
+  border: 1.5px solid rgba(0, 255, 136, 0.12);
+  color: #ffffff;
+  border-radius: 0.5rem;
+  padding: 0.875rem 1rem;
+  font-family: "Geist Mono", monospace;
+  font-size: 0.875rem;
+  font-weight: 500;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s
+    cubic-bezier(0.4, 0, 0.2, 1), background 0.25s ease-out;
+}
+.volboost-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+.volboost-input:focus {
+  border-color: rgba(0, 255, 136, 0.6);
+  box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.12), 0 0 16px rgba(0, 255, 136, 0.2);
+  background: #1a1a1a;
+}
+.volboost-input.error {
+  border-color: rgba(255, 80, 80, 0.7);
+  box-shadow: 0 0 0 4px rgba(255, 80, 80, 0.1);
+  animation: inputShake 0.4s ease-in-out;
+}
+
+/* ─── Step Progress Dots ───────────────────────────────────────────────────── */
+
+@keyframes stepDotPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+  }
+}
+
+.step-dot {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 2px solid rgba(0, 255, 136, 0.15);
+  background: #1a1a1a;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: "Geist Mono", monospace;
+}
+.step-dot.active {
+  background-color: #00ff88;
+  border-color: #00ff88;
+  color: #0d0d0d;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+  animation: stepDotPulse 1.4s ease-in-out infinite;
+  transform: scale(1.1);
+}
+.step-dot.completed {
+  background-color: rgba(0, 255, 136, 0.15);
+  border-color: rgba(0, 255, 136, 0.6);
+  color: #00ff88;
+}
+
+/* ─── Scrollbar ────────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0d0d;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 136, 0.3);
+}
+
+/* ─── Particle burst (confetti) ────────────────────────────────────────────── */
+
+@keyframes particleFade {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateY(0px)
+      scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg))
+      translateY(-80px) scale(0.3);
+  }
+}
+
+/* ─── Reduced motion ─────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .step-enter,
+  .check-pop,
+  .progress-fill,
+  .card-green-glow,
+  .button-glow-pulse {
+    animation: none;
+  }
+  .step-dot,
+  .card-interactive,
+  .btn-cta {
+    transition: none;
+  }
+  .pulse-dot,
+  .spinner,
+  .step-dot.active {
+    animation: none;
+  }
+}
+
+/* ─── Premium utility animations ─────────────────────────────────────────── */
+
+@layer utilities {
+  .animate-terminal-glow {
+    @apply animate-pulse;
+    color: #00ff88;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  }
+
+  .text-terminal {
+    @apply font-mono text-xs md:text-sm;
+    letter-spacing: 0.05em;
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  .text-code {
+    @apply font-mono text-xs;
+    font-family: "JetBrains Mono", monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .badge-capsule {
+    @apply inline-block px-3 py-1 rounded-full text-xs font-bold;
+    background-color: rgba(0, 255, 136, 0.15);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    font-family: "JetBrains Mono", monospace;
+    letter-spacing: 0.025em;
+  }
+
+  .badge-capsule-active {
+    @apply badge-capsule;
+    background-color: rgba(0, 255, 136, 0.25);
+    border-color: rgba(0, 255, 136, 0.6);
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
+  }
+
+  .transition-spring {
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .transition-smooth {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glow-subtle {
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+  }
+
+  .glow-active {
+    text-shadow: 0 0 16px rgba(0, 255, 136, 0.6), 0 0 24px
+      rgba(0, 255, 136, 0.3);
+  }
+
+  .text-label {
+    @apply text-xs md:text-sm uppercase tracking-widest;
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+}

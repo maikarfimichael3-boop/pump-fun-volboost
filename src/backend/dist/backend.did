@@ -1,0 +1,69 @@
+type TierInfo = 
+ record {
+   dollarTarget: nat;
+   estimatedHours: nat;
+   name: text;
+   solCost: float64;
+   tier: BoostTier;
+ };
+type LeaderboardEntry = 
+ record {
+   displayWallet: text;
+   rank: nat;
+   totalOrders: nat;
+   totalVolume: nat;
+   walletAddress: text;
+ };
+type BoostTier = 
+ variant {
+   Advanced;
+   Basic;
+   Elite;
+   Growth;
+   Premium;
+   Pro;
+   Starter;
+   Ultra;
+ };
+type BoostStatus = 
+ variant {
+   Active;
+   Completed;
+   Failed;
+   Pending;
+   Processing;
+ };
+type BoostProgress = 
+ record {
+   orderId: text;
+   percentComplete: nat;
+   status: BoostStatus;
+   timeRemaining: int;
+   volumeAchieved: nat;
+   volumeTarget: nat;
+ };
+type BoostOrder = 
+ record {
+   ca: text;
+   createdAt: int;
+   estimatedCompletionTime: int;
+   id: text;
+   solAmount: float64;
+   status: BoostStatus;
+   tier: BoostTier;
+   volumeAchieved: nat;
+   volumeTarget: nat;
+   walletAddress: text;
+ };
+service : {
+  getActiveBoosts: () -> (vec BoostOrder) query;
+  getBoostOrder: (orderId: text) -> (opt BoostOrder) query;
+  getBoostOrdersByWallet: (walletAddress: text) -> (vec BoostOrder) query;
+  getBoostProgress: (orderId: text) -> (opt BoostProgress) query;
+  getLeaderboard: (limit: nat) -> (vec LeaderboardEntry) query;
+  getTierInfo: () -> (vec TierInfo) query;
+  simulateProgressUpdate: () -> ();
+  submitBoostOrder: (ca: text, tier: text, walletAddress: text) ->
+   (BoostOrder);
+  updateBoostStatus: (orderId: text, status: text) -> (bool);
+}

@@ -1,0 +1,25 @@
+{
+  "overview": "Pump.Fun VolBoost is a Solana volume boost tool that helps meme coin creators boost trading volume and market cap on the Pump.fun ecosystem. Users paste their contract address, pick a boost package, connect their wallet, and track their boost progress in real time.",
+  "features": [
+    "5-step boost wizard: CA input, package selection, wallet connect, order review, and confirmation",
+    "8 volume tier packages from $1K Starter to $2M Premium with SOL and USD pricing",
+    "Live boost dashboard with animated progress tracker and real-time status",
+    "All-time leaderboard showing the biggest volume boosts",
+    "Phantom-style wallet connect with public key retrieval",
+    "Haptic feedback and iOS-style spring/bounce animations",
+    "Animated terminal background with green particle pulse",
+    "Pump.Fun branding with green capsule badges and Powered by Solana footer"
+  ],
+  "category": "tools",
+  "tags": [
+    "solana",
+    "pump-fun",
+    "volume-boost",
+    "meme-coin",
+    "defi",
+    "tool",
+    "terminal",
+    "crypto"
+  ],
+  "last_updated": "2026-04-21T12:21:57.151Z"
+}

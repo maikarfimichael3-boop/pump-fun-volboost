@@ -1,0 +1,297 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url("/assets/fonts/Figtree.woff2") format("woff2");
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/assets/fonts/JetBrainsMono.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Miner's Boot — Coal, Amber, Copper */
+    --background: 0.09 0 0;
+    --foreground: 0.92 0.01 80;
+    --card: 0.13 0.005 60;
+    --card-foreground: 0.92 0.01 80;
+    --primary: 0.78 0.17 70;
+    --primary-foreground: 0.09 0 0;
+    --secondary: 0.18 0.008 60;
+    --secondary-foreground: 0.92 0.01 80;
+    --muted: 0.22 0.008 60;
+    --muted-foreground: 0.62 0.015 60;
+    --accent: 0.58 0.12 50;
+    --accent-foreground: 0.92 0.01 80;
+    --border: 0.22 0.01 60;
+    --input: 0.18 0.008 60;
+    --ring: 0.78 0.17 70;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Figtree", system-ui, sans-serif;
+    background-color: #0d0d0d;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ─── Dust Particles ─────────────────────────────────────────────────────── */
+
+@keyframes floatUp {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.8);
+  }
+  15% {
+    opacity: 0.5;
+  }
+  85% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-130px) scale(1.1);
+  }
+}
+
+.dust-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255, 176, 0, 0.5);
+  animation: floatUp linear infinite;
+  pointer-events: none;
+}
+
+/* ─── Lantern Flicker ────────────────────────────────────────────────────── */
+
+@keyframes lanternFlicker {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 60px 20px rgba(255, 176, 0, 0.3), 0 0 120px 60px
+      rgba(184, 115, 51, 0.15);
+  }
+  8% {
+    opacity: 0.92;
+    box-shadow: 0 0 45px 15px rgba(255, 176, 0, 0.22), 0 0 90px 40px
+      rgba(184, 115, 51, 0.1);
+  }
+  15% {
+    opacity: 1;
+    box-shadow: 0 0 70px 25px rgba(255, 176, 0, 0.35), 0 0 130px 65px
+      rgba(184, 115, 51, 0.18);
+  }
+  25% {
+    opacity: 0.95;
+  }
+  40% {
+    opacity: 1;
+    box-shadow: 0 0 60px 20px rgba(255, 176, 0, 0.3), 0 0 120px 60px
+      rgba(184, 115, 51, 0.15);
+  }
+  55% {
+    opacity: 0.88;
+    box-shadow: 0 0 40px 12px rgba(255, 176, 0, 0.2), 0 0 80px 35px
+      rgba(184, 115, 51, 0.08);
+  }
+  70% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 0.94;
+    box-shadow: 0 0 55px 18px rgba(255, 176, 0, 0.28), 0 0 110px 55px
+      rgba(184, 115, 51, 0.13);
+  }
+}
+
+.boot-glow {
+  animation: lanternFlicker 6s ease-in-out infinite;
+  box-shadow: 0 0 60px 20px rgba(255, 176, 0, 0.3), 0 0 120px 60px
+    rgba(184, 115, 51, 0.15);
+}
+
+/* ─── Ticker ─────────────────────────────────────────────────────────────── */
+
+.ticker-inner {
+  animation: ticker 32s linear infinite;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+.ticker-inner:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* ─── Card hover glows ───────────────────────────────────────────────────── */
+
+.card-copper {
+  transition: border-color 0.3s ease-out, box-shadow 0.3s ease-out, transform
+    0.3s ease-out;
+  border-color: rgba(184, 115, 51, 0.18);
+}
+.card-copper:hover {
+  border-color: rgba(184, 115, 51, 0.65);
+  box-shadow: 0 0 28px rgba(184, 115, 51, 0.28), 0 12px 48px rgba(0, 0, 0, 0.5);
+  transform: translateY(-5px);
+}
+
+.card-amber {
+  transition: border-color 0.3s ease-out, box-shadow 0.3s ease-out, transform
+    0.3s ease-out;
+  border-color: rgba(255, 176, 0, 0.12);
+}
+.card-amber:hover {
+  border-color: rgba(255, 176, 0, 0.45);
+  box-shadow: 0 0 28px rgba(255, 176, 0, 0.22), 0 12px 40px rgba(0, 0, 0, 0.45);
+  transform: translateY(-5px);
+}
+
+/* ─── Text glows ─────────────────────────────────────────────────────────── */
+
+.text-glow-amber {
+  text-shadow: 0 0 18px rgba(255, 176, 0, 0.8), 0 0 36px rgba(255, 176, 0, 0.35);
+}
+.text-glow-copper {
+  text-shadow: 0 0 16px rgba(184, 115, 51, 0.7), 0 0 32px
+    rgba(184, 115, 51, 0.3);
+}
+
+/* ─── Scroll reveal ──────────────────────────────────────────────────────── */
+
+.reveal-section {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s
+    cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-section.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+.stagger-child {
+  opacity: 0;
+  transform: translateY(18px);
+}
+.revealed .stagger-child {
+  animation: staggerIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes staggerIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Mine shaft light ───────────────────────────────────────────────────── */
+
+.mine-shaft {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 176, 0, 0.06) 50%,
+    transparent 100%
+  );
+}
+
+/* ─── Copper divider ─────────────────────────────────────────────────────── */
+
+.copper-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(184, 115, 51, 0.5),
+    transparent
+  );
+}
+
+/* ─── Hazard strip ───────────────────────────────────────────────────────── */
+
+.hazard-strip {
+  background: repeating-linear-gradient(
+    -45deg,
+    #ffb000 0px,
+    #ffb000 18px,
+    #1a1a1a 18px,
+    #1a1a1a 36px
+  );
+}
+
+/* ─── Mine tag (CA box) ──────────────────────────────────────────────────── */
+
+.mine-tag {
+  background: linear-gradient(135deg, #1a1a1a 0%, #141414 100%);
+  border: 1px solid rgba(184, 115, 51, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 176, 0, 0.06), 0 4px 20px
+    rgba(0, 0, 0, 0.5);
+}
+
+/* ─── FAQ accordion transition ───────────────────────────────────────────── */
+
+.faq-content {
+  transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s
+    ease-out;
+}
+
+/* ─── Reduced motion ─────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .dust-particle {
+    animation: none;
+    opacity: 0;
+  }
+  .boot-glow {
+    animation: none;
+  }
+  .ticker-inner {
+    animation: none;
+  }
+  .reveal-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .stagger-child {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url("/assets/fonts/Figtree.woff2") format("woff2");
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/assets/fonts/JetBrainsMono.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Dark meme coin theme — near black + electric green + gold */
+    --background: 0.1 0 0;
+    --foreground: 0.97 0.01 100;
+    --card: 0.14 0.01 240;
+    --card-foreground: 0.97 0.01 100;
+    --primary: 0.85 0.27 145;
+    --primary-foreground: 0.1 0 0;
+    --secondary: 0.18 0.01 240;
+    --secondary-foreground: 0.97 0.01 100;
+    --muted: 0.2 0.01 240;
+    --muted-foreground: 0.6 0.01 240;
+    --accent: 0.78 0.18 85;
+    --accent-foreground: 0.1 0 0;
+    --border: 0.25 0.02 240;
+    --input: 0.2 0.01 240;
+    --ring: 0.85 0.27 145;
+    --gold: 0.78 0.18 85;
+    --gold-foreground: 0.1 0 0;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+    background-color: #0a0a0f;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Noise texture overlay */
+.noise-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Glowing text */
+.text-glow-green {
+  text-shadow: 0 0 20px oklch(0.85 0.27 145 / 0.8), 0 0 40px
+    oklch(0.85 0.27 145 / 0.4);
+}
+.text-glow-gold {
+  text-shadow: 0 0 20px oklch(0.78 0.18 85 / 0.8), 0 0 40px
+    oklch(0.78 0.18 85 / 0.4);
+}
+
+/* Ticker */
+.ticker-inner {
+  animation: ticker 30s linear infinite;
+  white-space: nowrap;
+}
+.ticker-inner:hover {
+  animation-play-state: paused;
+}
+
+/* Gradient mesh background */
+.hero-bg {
+  background: radial-gradient(
+      ellipse 80% 60% at 50% 0%,
+      oklch(0.2 0.08 145 / 0.5) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 80% 50%,
+      oklch(0.2 0.06 85 / 0.3) 0%,
+      transparent 50%
+    ), #0a0a0f;
+}
+
+/* Scanline effect */
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.05) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-24px) rotate(2deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px oklch(0.85 0.27 145 / 0.4), 0 0 40px
+      oklch(0.85 0.27 145 / 0.1);
+  }
+  50% {
+    box-shadow: 0 0 40px oklch(0.85 0.27 145 / 0.8), 0 0 80px
+      oklch(0.85 0.27 145 / 0.3);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* Card border glow on hover */
+.card-glow {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.card-glow:hover {
+  box-shadow: 0 0 20px oklch(0.85 0.27 145 / 0.3);
+  border-color: oklch(0.85 0.27 145 / 0.5);
+}
