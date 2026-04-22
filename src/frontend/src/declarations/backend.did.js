@@ -32,9 +32,12 @@ export const BoostOrder = IDL.Record({
   'solAmount' : IDL.Float64,
   'volumeTarget' : IDL.Nat,
   'createdAt' : IDL.Int,
+  'coinSymbol' : IDL.Opt(IDL.Text),
   'tier' : BoostTier,
   'walletAddress' : IDL.Text,
   'volumeAchieved' : IDL.Nat,
+  'txHash' : IDL.Text,
+  'coinName' : IDL.Opt(IDL.Text),
   'estimatedCompletionTime' : IDL.Int,
 });
 export const BoostProgress = IDL.Record({
@@ -79,13 +82,39 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getTierInfo' : IDL.Func([], [IDL.Vec(TierInfo)], ['query']),
+  'sendTelegramNotification' : IDL.Func(
+      [IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+      [],
+    ),
+  'setTelegramConfig' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'simulateProgressUpdate' : IDL.Func([], [], []),
   'submitBoostOrder' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text],
       [BoostOrder],
       [],
     ),
+  'submitBoostOrderWithCoin' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [BoostOrder],
+      [],
+    ),
+  'submitTxHash' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Variant({ 'ok' : BoostOrder, 'err' : IDL.Text })],
+      [],
+    ),
   'updateBoostStatus' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+  'verifyAndActivateBoost' : IDL.Func(
+      [IDL.Text],
+      [IDL.Variant({ 'ok' : BoostOrder, 'err' : IDL.Text })],
+      [],
+    ),
+  'verifyTxHashOnChain' : IDL.Func(
+      [IDL.Text],
+      [IDL.Variant({ 'ok' : IDL.Bool, 'err' : IDL.Text })],
+      [],
+    ),
 });
 
 export const idlInitArgs = [];
@@ -115,9 +144,12 @@ export const idlFactory = ({ IDL }) => {
     'solAmount' : IDL.Float64,
     'volumeTarget' : IDL.Nat,
     'createdAt' : IDL.Int,
+    'coinSymbol' : IDL.Opt(IDL.Text),
     'tier' : BoostTier,
     'walletAddress' : IDL.Text,
     'volumeAchieved' : IDL.Nat,
+    'txHash' : IDL.Text,
+    'coinName' : IDL.Opt(IDL.Text),
     'estimatedCompletionTime' : IDL.Int,
   });
   const BoostProgress = IDL.Record({
@@ -162,13 +194,39 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getTierInfo' : IDL.Func([], [IDL.Vec(TierInfo)], ['query']),
+    'sendTelegramNotification' : IDL.Func(
+        [IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text })],
+        [],
+      ),
+    'setTelegramConfig' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'simulateProgressUpdate' : IDL.Func([], [], []),
     'submitBoostOrder' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text],
         [BoostOrder],
         [],
       ),
+    'submitBoostOrderWithCoin' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [BoostOrder],
+        [],
+      ),
+    'submitTxHash' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Variant({ 'ok' : BoostOrder, 'err' : IDL.Text })],
+        [],
+      ),
     'updateBoostStatus' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+    'verifyAndActivateBoost' : IDL.Func(
+        [IDL.Text],
+        [IDL.Variant({ 'ok' : BoostOrder, 'err' : IDL.Text })],
+        [],
+      ),
+    'verifyTxHashOnChain' : IDL.Func(
+        [IDL.Text],
+        [IDL.Variant({ 'ok' : IDL.Bool, 'err' : IDL.Text })],
+        [],
+      ),
   });
 };
 

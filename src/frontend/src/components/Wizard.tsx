@@ -1,13 +1,22 @@
 import { PackageCard } from "@/components/PackageCard";
 import { StepProgressBar } from "@/components/StepProgressBar";
 import { VOLUME_PACKAGES } from "@/constants/packages";
-import { useLeaderboard, useSubmitOrder } from "@/hooks/useBoost";
-import type { WizardStep } from "@/types";
+import {
+  useLeaderboard,
+  useSubmitOrder,
+  useSubmitTxHash,
+  useVerifyBoost,
+  useVerifyTxOnChain,
+} from "@/hooks/useBoost";
+import type { TokenMetadata, WizardStep } from "@/types";
 import { haptic } from "@/utils/haptic";
 import {
   formatAddress,
+  formatUsdAmount,
   generateOrderId,
   isValidSolanaAddress,
+  isValidTxHash,
+  lookupTokenByCA,
 } from "@/utils/solana";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -16,23 +25,52 @@ import { toast } from "sonner";
 
 const PAYMENT_WALLET = "LiNRXfwp681aF3uV5vtVEBrBLmQEx7d7Nr85gjfmkFY";
 
+/* ─── Token logo with fallback ──────────────────────────────────────────── */
+
+function TokenLogo({ logoURI, symbol }: { logoURI?: string; symbol: string }) {
+  const [errored, setErrored] = useState(false);
+  if (logoURI && !errored) {
+    return (
+      <img
+        src={logoURI}
+        alt={`${symbol} logo`}
+        onError={() => setErrored(true)}
+        className="w-full h-full object-cover rounded-full"
+      />
+    );
+  }
+  return (
+    <span
+      className="font-display font-bold text-xl"
+      style={{ color: "#0d0d0d" }}
+    >
+      {symbol.slice(0, 2).toUpperCase()}
+    </span>
+  );
+}
+
 /* ─── Step 1: Token Contract Address ────────────────────────────────────── */
 
 export function WizardStep1CA({
   value,
   onChange,
   onNext,
+  onTokenVerified,
+  verifiedToken,
 }: {
   value: string;
   onChange: (v: string) => void;
   onNext: () => void;
+  onTokenVerified: (token: TokenMetadata | null) => void;
+  verifiedToken: TokenMetadata | null;
 }) {
   const [touched, setTouched] = useState(false);
-  const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [verifyFailed, setVerifyFailed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const isValid = isValidSolanaAddress(value);
   const showError = touched && value.length > 0 && !isValid;
+  const isVerified = !!verifiedToken;
 
   const handlePaste = async () => {
     try {
@@ -40,32 +78,53 @@ export function WizardStep1CA({
       onChange(text.trim());
       haptic("select");
       setTouched(true);
+      onTokenVerified(null);
+      setVerifyFailed(false);
     } catch {
       /* clipboard not available */
     }
   };
 
-  const handleVerify = () => {
-    if (!isValid) return;
+  const handleVerify = async () => {
+    if (!isValid || verifying) return;
     setVerifying(true);
+    setVerifyFailed(false);
+    onTokenVerified(null);
     haptic("tap");
-    setTimeout(() => {
+    try {
+      const token = await lookupTokenByCA(value.trim());
+      if (token) {
+        onTokenVerified(token);
+        haptic("confirm");
+        const sourceLabel =
+          token.source === "pumpfun"
+            ? "Verified on Pump.fun"
+            : "Verified on Solana";
+        toast.success(`${token.name} verified!`, {
+          description: `$${token.symbol} · ${sourceLabel}`,
+        });
+      } else {
+        setVerifyFailed(true);
+        haptic("error");
+      }
+    } catch {
+      setVerifyFailed(true);
+      haptic("error");
+    } finally {
       setVerifying(false);
-      setVerified(true);
-      haptic("confirm");
-      toast.success("Token verified!", { description: formatAddress(value) });
-    }, 1500);
+    }
   };
 
+  // Reset verification when CA changes
   useEffect(() => {
-    setVerified(false);
-  }, []); // re-runs only on mount
+    setVerifyFailed(false);
+  }, []); // intentionally runs once on mount — CA changes handled by onChange prop
 
   return (
     <div className="step-enter">
       {/* Header */}
       <div className="mb-1 flex items-center gap-2">
-        <span className="badge-capsule text-[10px]">STEP 1 / 4</span>
+        <span className="badge-capsule text-[10px]">STEP 1 / 5</span>
       </div>
       <h2 className="font-display text-xl font-bold text-white tracking-wider mb-1">
         TOKEN ADDRESS
@@ -90,7 +149,7 @@ export function WizardStep1CA({
         <input
           ref={inputRef}
           type="text"
-          className={`volboost-input pr-20${showError ? " error" : isValid && value ? " border-green-400" : ""}`}
+          className={`volboost-input pr-20${showError ? " error" : isVerified ? " border-green-400" : ""}`}
           placeholder="Paste your Solana CA here..."
           value={value}
           onChange={(e) => {
@@ -137,85 +196,259 @@ export function WizardStep1CA({
           </span>
         </p>
       )}
-      {isValid && value && !showError && (
+      {isValid && value && !showError && !isVerified && !verifyFailed && (
         <p
           className="font-body text-xs mb-3 flex items-center gap-1.5"
           style={{ color: "rgba(0,255,136,0.7)" }}
         >
           <span>✓</span>
-          <span>Valid Solana address format</span>
+          <span>Valid format — click Verify Token to confirm on-chain</span>
         </p>
       )}
-      {!showError && !(isValid && value) && <div className="mb-3" />}
+      {!showError && !(isValid && value) && !verifyFailed && (
+        <div className="mb-3" />
+      )}
 
       {/* Verify button */}
       <button
         type="button"
         onClick={handleVerify}
-        disabled={!isValid || verifying}
+        disabled={!isValid || verifying || isVerified}
         className="w-full py-3 rounded-xl font-body font-semibold text-sm mb-4 border transition-smooth flex items-center justify-center gap-2"
         style={{
-          borderColor: verified
-            ? "rgba(0,255,136,0.4)"
-            : "rgba(0,255,136,0.15)",
-          color: verified ? "#00ff88" : "rgba(255,255,255,0.4)",
-          backgroundColor: verified
+          borderColor: isVerified
+            ? "rgba(0,255,136,0.5)"
+            : verifyFailed
+              ? "rgba(255,80,80,0.3)"
+              : "rgba(0,255,136,0.15)",
+          color: isVerified
+            ? "#00ff88"
+            : verifyFailed
+              ? "#ff5050"
+              : "rgba(255,255,255,0.4)",
+          backgroundColor: isVerified
             ? "rgba(0,255,136,0.06)"
-            : "rgba(255,255,255,0.02)",
-          opacity: !isValid ? 0.4 : 1,
-          cursor: !isValid ? "not-allowed" : "pointer",
+            : verifyFailed
+              ? "rgba(255,80,80,0.03)"
+              : "rgba(255,255,255,0.02)",
+          opacity: !isValid && !isVerified ? 0.4 : 1,
+          cursor: !isValid || isVerified ? "not-allowed" : "pointer",
         }}
         data-ocid="wizard.ca_verify_button"
       >
         {verifying ? (
           <>
+            <span
+              className="pulse-dot w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: "#00ff88" }}
+            />
+            <span className="font-mono text-xs">
+              Looking up token on Pump.fun…
+            </span>
+          </>
+        ) : isVerified ? (
+          <>✓ Token verified on-chain</>
+        ) : verifyFailed ? (
+          <>⚠ Token not found — check your CA</>
+        ) : (
+          <>
             <svg
-              className="spinner w-4 h-4"
-              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
               fill="none"
               role="img"
+              aria-label="Verify token"
             >
-              <title>Verifying</title>
               <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="rgba(0,255,136,0.2)"
-                strokeWidth="3"
+                cx="7"
+                cy="7"
+                r="5.5"
+                stroke="rgba(0,255,136,0.5)"
+                strokeWidth="1.2"
               />
               <path
-                d="M12 2a10 10 0 0 1 10 10"
-                stroke="#00ff88"
-                strokeWidth="3"
+                d="M4.5 7L6.5 9L9.5 5"
+                stroke="rgba(0,255,136,0.5)"
+                strokeWidth="1.4"
                 strokeLinecap="round"
+                strokeLinejoin="round"
               />
             </svg>
-            Verifying token…
+            Verify Token
           </>
-        ) : verified ? (
-          <>✓ Token verified</>
-        ) : (
-          "Verify token"
         )}
       </button>
+
+      {/* Error state */}
+      {verifyFailed && (
+        <div
+          className="rounded-xl p-4 mb-4 flex items-start gap-3 border"
+          style={{
+            backgroundColor: "rgba(255,80,80,0.04)",
+            borderColor: "rgba(255,80,80,0.25)",
+          }}
+          data-ocid="wizard.ca_verify.error_state"
+        >
+          <span className="text-lg flex-shrink-0">⚠️</span>
+          <div>
+            <p
+              className="font-body text-sm font-semibold mb-0.5"
+              style={{ color: "#ff5050" }}
+            >
+              Token not found on Solana
+            </p>
+            <p
+              className="font-body text-xs"
+              style={{ color: "rgba(255,80,80,0.7)" }}
+            >
+              Please check the contract address and try again. Make sure you're
+              using the correct CA from Pump.fun or your wallet.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Verified token card */}
+      {isVerified && verifiedToken && (
+        <div
+          className="rounded-2xl p-4 mb-5 border step-enter"
+          style={{
+            backgroundColor: "rgba(0,255,136,0.03)",
+            borderColor: "rgba(0,255,136,0.35)",
+            boxShadow:
+              "0 0 24px rgba(0,255,136,0.08), inset 0 0 16px rgba(0,255,136,0.03)",
+            backdropFilter: "blur(8px)",
+          }}
+          data-ocid="wizard.token_verified_card"
+        >
+          <div className="flex items-center gap-4">
+            {/* Logo with glow ring */}
+            <div className="relative flex-shrink-0">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden"
+                style={{
+                  backgroundColor: "#00ff88",
+                  border: "2px solid rgba(0,255,136,0.5)",
+                  boxShadow:
+                    "0 0 16px rgba(0,255,136,0.4), 0 0 32px rgba(0,255,136,0.15)",
+                }}
+              >
+                <TokenLogo
+                  logoURI={verifiedToken.logoURI}
+                  symbol={verifiedToken.symbol}
+                />
+              </div>
+              {/* Outer glow ring */}
+              <div
+                className="absolute -inset-1.5 rounded-full pointer-events-none"
+                style={{
+                  border: "1px solid rgba(0,255,136,0.2)",
+                  animation: "greenGlow 2s ease-in-out infinite",
+                }}
+                aria-hidden
+              />
+            </div>
+
+            {/* Token info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="font-display font-bold text-white text-base leading-tight truncate">
+                  {verifiedToken.name}
+                </span>
+                {/* Source badge */}
+                {verifiedToken.source === "pumpfun" ? (
+                  <span
+                    className="font-mono text-[9px] px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1"
+                    style={{
+                      backgroundColor: "rgba(0,255,136,0.12)",
+                      color: "#00ff88",
+                      border: "1px solid rgba(0,255,136,0.3)",
+                    }}
+                    data-ocid="wizard.token_source_badge"
+                  >
+                    ✓ PUMP.FUN
+                  </span>
+                ) : (
+                  <span
+                    className="font-mono text-[9px] px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1"
+                    style={{
+                      backgroundColor: "rgba(99,102,241,0.12)",
+                      color: "#818cf8",
+                      border: "1px solid rgba(99,102,241,0.3)",
+                    }}
+                    data-ocid="wizard.token_source_badge"
+                  >
+                    ✓ SOLANA
+                  </span>
+                )}
+              </div>
+              <p
+                className="font-mono text-sm font-bold mb-2"
+                style={{ color: "#00ff88" }}
+              >
+                ${verifiedToken.symbol}
+              </p>
+              {/* Metadata row */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {verifiedToken.usdMarketCap != null &&
+                  verifiedToken.usdMarketCap > 0 && (
+                    <span
+                      className="font-mono text-[10px] px-2 py-0.5 rounded"
+                      style={{
+                        backgroundColor: "rgba(0,255,136,0.06)",
+                        color: "rgba(0,255,136,0.75)",
+                        border: "1px solid rgba(0,255,136,0.15)",
+                      }}
+                    >
+                      MC {formatUsdAmount(verifiedToken.usdMarketCap)}
+                    </span>
+                  )}
+                <span
+                  className="font-mono text-[10px] px-2 py-0.5 rounded"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                    color: "rgba(255,255,255,0.4)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  Decimals: {verifiedToken.decimals}
+                </span>
+                <span
+                  className="font-mono text-[10px] px-2 py-0.5 rounded"
+                  style={{
+                    backgroundColor: "rgba(153,69,255,0.08)",
+                    color: "rgba(153,69,255,0.8)",
+                    border: "1px solid rgba(153,69,255,0.2)",
+                  }}
+                >
+                  SPL Token
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Continue CTA */}
       <button
         type="button"
         className="btn-cta w-full py-4 rounded-xl font-display font-bold text-base tracking-wide"
-        disabled={!isValid}
+        disabled={!isVerified}
         onClick={() => {
-          if (!isValid) {
+          if (!isVerified) {
             haptic("error");
-            setTouched(true);
             return;
           }
           haptic("select");
           onNext();
         }}
         data-ocid="wizard.ca_continue_button"
+        style={
+          !isVerified ? { opacity: 0.35, cursor: "not-allowed" } : undefined
+        }
       >
-        Continue →
+        {isVerified ? "Continue →" : "Verify token to continue"}
       </button>
 
       <p
@@ -244,7 +477,7 @@ export function WizardStep2Package({
   return (
     <div className="step-enter">
       <div className="mb-1 flex items-center gap-2">
-        <span className="badge-capsule text-[10px]">STEP 2 / 4</span>
+        <span className="badge-capsule text-[10px]">STEP 2 / 5</span>
       </div>
       <h2 className="font-display text-xl font-bold text-white tracking-wider mb-1">
         SELECT PACKAGE
@@ -366,7 +599,7 @@ export function WizardStep3Review({
   return (
     <div className="step-enter">
       <div className="mb-1 flex items-center gap-2">
-        <span className="badge-capsule text-[10px]">STEP 3 / 4</span>
+        <span className="badge-capsule text-[10px]">STEP 3 / 5</span>
       </div>
       <h2 className="font-display text-xl font-bold text-white tracking-wider mb-1">
         SEND PAYMENT
@@ -378,7 +611,7 @@ export function WizardStep3Review({
         Open your Solana wallet and send the exact amount below
       </p>
 
-      {/* ── PRIMARY: Payment instruction card ───────────────────────────── */}
+      {/* PRIMARY: Payment instruction card */}
       <div
         className="rounded-2xl p-5 mb-4 border"
         style={{
@@ -389,7 +622,6 @@ export function WizardStep3Review({
         }}
         data-ocid="wizard.payment_instruction_card"
       >
-        {/* Amount to send */}
         <p
           className="font-mono text-[10px] tracking-widest mb-2 uppercase"
           style={{ color: "rgba(0,255,136,0.6)" }}
@@ -415,7 +647,6 @@ export function WizardStep3Review({
           </span>
         </div>
 
-        {/* Wallet address label */}
         <p
           className="font-mono text-[10px] tracking-widest mb-2 uppercase"
           style={{ color: "rgba(0,255,136,0.6)" }}
@@ -423,7 +654,6 @@ export function WizardStep3Review({
           Send to This Wallet
         </p>
 
-        {/* Address block — terminal style */}
         <div
           className="rounded-xl px-4 py-3.5 mb-3 select-all"
           style={{
@@ -445,7 +675,6 @@ export function WizardStep3Review({
           </code>
         </div>
 
-        {/* Big copy button */}
         <button
           type="button"
           onClick={copyPaymentWallet}
@@ -470,10 +699,10 @@ export function WizardStep3Review({
                 height="16"
                 viewBox="0 0 16 16"
                 fill="none"
-                aria-hidden="true"
+                aria-hidden
                 role="presentation"
               >
-                <title>Copied</title>
+                <title>Copied checkmark</title>
                 <path
                   d="M3 8.5L6.5 12L13 5"
                   stroke="#00ff88"
@@ -491,7 +720,7 @@ export function WizardStep3Review({
                 height="16"
                 viewBox="0 0 16 16"
                 fill="none"
-                aria-hidden="true"
+                aria-hidden
                 role="presentation"
               >
                 <title>Copy</title>
@@ -516,7 +745,6 @@ export function WizardStep3Review({
           )}
         </button>
 
-        {/* Instruction line */}
         <p
           className="font-body text-xs text-center mt-3"
           style={{ color: "rgba(255,255,255,0.35)" }}
@@ -529,7 +757,7 @@ export function WizardStep3Review({
         </p>
       </div>
 
-      {/* ── Order summary card ───────────────────────────────────────────── */}
+      {/* Order summary card */}
       <div
         className="rounded-xl p-4 mb-5 border"
         style={{
@@ -544,7 +772,6 @@ export function WizardStep3Review({
         >
           Order Summary
         </p>
-
         {[
           {
             label: "Token",
@@ -613,7 +840,7 @@ export function WizardStep3Review({
         ))}
       </div>
 
-      {/* ── "I've Paid" CTA ──────────────────────────────────────────────── */}
+      {/* "I've Sent It" CTA — advances to TX hash step */}
       <button
         type="button"
         className="btn-cta w-full py-4 rounded-xl font-display font-bold text-base mb-3 flex items-center justify-center gap-2.5"
@@ -649,7 +876,7 @@ export function WizardStep3Review({
                 strokeLinecap="round"
               />
             </svg>
-            Activating boost…
+            Registering order…
           </>
         ) : (
           <>
@@ -658,7 +885,7 @@ export function WizardStep3Review({
               height="18"
               viewBox="0 0 18 18"
               fill="none"
-              aria-hidden="true"
+              aria-hidden
               role="presentation"
             >
               <title>Confirm</title>
@@ -670,7 +897,7 @@ export function WizardStep3Review({
                 strokeLinejoin="round"
               />
             </svg>
-            I've Paid — Activate My Boost
+            I've Sent the Payment →
           </>
         )}
       </button>
@@ -706,6 +933,590 @@ export function WizardStep3Review({
   );
 }
 
+/* ─── TX Hash Tooltip ────────────────────────────────────────────────────── */
+
+function TxHashHelpTooltip({
+  open,
+  onClose,
+}: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
+  return (
+    <div
+      className="absolute left-0 right-0 z-50 rounded-xl p-4 border shadow-2xl step-enter"
+      style={{
+        backgroundColor: "#181818",
+        borderColor: "rgba(0,255,136,0.25)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(0,255,136,0.08)",
+        top: "calc(100% + 8px)",
+      }}
+      data-ocid="wizard.txhash_help.tooltip"
+    >
+      <div className="flex justify-between items-start mb-2">
+        <p className="font-display font-bold text-white text-sm">
+          Where to find your TX Hash
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="font-mono text-xs transition-smooth ml-3 flex-shrink-0"
+          style={{ color: "rgba(255,255,255,0.4)" }}
+          aria-label="Close tooltip"
+          data-ocid="wizard.txhash_help.close_button"
+        >
+          ✕
+        </button>
+      </div>
+      {[
+        "1. Open your Solana wallet (Phantom, Solflare, etc.)",
+        "2. Go to Transaction History or Activity",
+        "3. Click your most recent outgoing transaction",
+        "4. Copy the Signature / Hash shown at the top",
+      ].map((step) => (
+        <div key={step} className="flex items-start gap-2 mb-1.5">
+          <span
+            className="font-mono text-[10px] flex-shrink-0 mt-0.5"
+            style={{ color: "#00ff88" }}
+          >
+            ▸
+          </span>
+          <span
+            className="font-body text-xs"
+            style={{ color: "rgba(255,255,255,0.55)" }}
+          >
+            {step}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Step 4: TX Hash Submission ─────────────────────────────────────────── */
+
+export function WizardStep4TxHash({
+  orderId,
+  pkgIndex,
+  onConfirmed,
+}: {
+  orderId: string;
+  pkgIndex: number;
+  onConfirmed: () => void;
+}) {
+  const [txHash, setTxHash] = useState("");
+  const [touched, setTouched] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyState, setVerifyState] = useState<
+    "idle" | "verifying" | "confirmed" | "not_found" | "rpc_error"
+  >("idle");
+  const [rpcErrorMsg, setRpcErrorMsg] = useState("");
+  const [manualOverride, setManualOverride] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const submitTxHash = useSubmitTxHash();
+  const verifyBoost = useVerifyBoost();
+  const verifyTxOnChain = useVerifyTxOnChain();
+  const pkg = VOLUME_PACKAGES[pkgIndex];
+
+  const isValid = isValidTxHash(txHash);
+  const showError = touched && txHash.length > 0 && !isValid;
+
+  const canContinueAfterRpcError =
+    verifyState === "rpc_error" && manualOverride;
+
+  const handleVerify = async () => {
+    if (!isValid || verifying) {
+      if (!isValid) {
+        haptic("error");
+        setTouched(true);
+      }
+      return;
+    }
+    setVerifying(true);
+    setVerifyState("verifying");
+    setManualOverride(false);
+    haptic("tap");
+    try {
+      const result = await verifyTxOnChain.mutateAsync({
+        txHash: txHash.trim(),
+      });
+      if (result.kind === "confirmed") {
+        await submitTxHash.mutateAsync({ orderId, txHash: txHash.trim() });
+        await verifyBoost.mutateAsync({ orderId });
+        setVerifyState("confirmed");
+        haptic("confirm");
+        toast.success("Transaction confirmed on-chain!", {
+          description: "Your boost is now activating.",
+        });
+        setTimeout(() => onConfirmed(), 1800);
+      } else if (result.kind === "not_found") {
+        setVerifyState("not_found");
+        haptic("error");
+      } else {
+        setVerifyState("rpc_error");
+        setRpcErrorMsg(result.message);
+        haptic("error");
+      }
+    } catch {
+      setVerifyState("rpc_error");
+      setRpcErrorMsg("Unexpected error reaching Solana network.");
+      haptic("error");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleManualContinue = async () => {
+    if (!manualOverride) return;
+    setVerifying(true);
+    haptic("tap");
+    try {
+      await submitTxHash.mutateAsync({ orderId, txHash: txHash.trim() });
+      await verifyBoost.mutateAsync({ orderId });
+      setVerifyState("confirmed");
+      haptic("confirm");
+      toast.success("Order submitted!", {
+        description: "We'll verify your transaction manually.",
+      });
+      setTimeout(() => onConfirmed(), 1800);
+    } catch {
+      haptic("error");
+      toast.error("Failed to submit order. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  return (
+    <div className="step-enter">
+      <div className="mb-1 flex items-center gap-2">
+        <span className="badge-capsule text-[10px]">STEP 4 / 5</span>
+      </div>
+      <h2 className="font-display text-xl font-bold text-white tracking-wider mb-1">
+        CONFIRM YOUR PAYMENT
+      </h2>
+      <p
+        className="font-body text-sm mb-6"
+        style={{ color: "rgba(255,255,255,0.4)" }}
+      >
+        Paste your Solana transaction hash below. Your boost will only activate
+        after we verify your payment on-chain.
+      </p>
+
+      {/* Order reminder */}
+      <div
+        className="rounded-xl px-4 py-3 mb-5 border flex items-center justify-between"
+        style={{
+          backgroundColor: "#111111",
+          borderColor: "rgba(255,255,255,0.07)",
+        }}
+      >
+        <div>
+          <p
+            className="font-mono text-[10px] tracking-wider mb-0.5"
+            style={{ color: "rgba(255,255,255,0.3)" }}
+          >
+            ORDER
+          </p>
+          <p
+            className="font-mono text-sm font-bold"
+            style={{ color: "#00ff88" }}
+          >
+            #{orderId}
+          </p>
+        </div>
+        <div className="text-right">
+          <p
+            className="font-mono text-[10px] tracking-wider mb-0.5"
+            style={{ color: "rgba(255,255,255,0.3)" }}
+          >
+            AMOUNT
+          </p>
+          <p className="font-mono text-sm font-bold text-white">
+            {pkg.solCostFmt}
+          </p>
+        </div>
+      </div>
+
+      {/* TX Hash input */}
+      <p
+        className="text-label mb-2"
+        style={{ color: "rgba(255,255,255,0.35)" }}
+      >
+        TRANSACTION HASH (TX HASH)
+      </p>
+
+      <div className="relative mb-2">
+        <textarea
+          className={`volboost-input resize-none${showError ? " error" : isValid && txHash ? " focused-green" : ""}`}
+          rows={3}
+          placeholder="Paste your Solana transaction signature here..."
+          value={txHash}
+          onChange={(e) => {
+            setTxHash(e.target.value.trim());
+            setVerifyState("idle");
+            setManualOverride(false);
+          }}
+          onBlur={() => setTouched(true)}
+          spellCheck={false}
+          autoComplete="off"
+          data-ocid="wizard.txhash_input"
+          aria-label="Transaction hash"
+          aria-invalid={showError}
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: "0.75rem",
+            paddingBottom: "0.75rem",
+          }}
+          disabled={verifyState === "confirmed" || verifyState === "verifying"}
+        />
+      </div>
+
+      {/* Inline validation */}
+      {showError && (
+        <p
+          className="font-body text-xs mb-3 flex items-center gap-1.5"
+          style={{ color: "#ff5050" }}
+          data-ocid="wizard.txhash_input.field_error"
+        >
+          <span>⚠</span>
+          <span>
+            Invalid TX hash — must be 87–88 base58 chars (no 0, O, I, l)
+          </span>
+        </p>
+      )}
+      {isValid && txHash && !showError && verifyState === "idle" && (
+        <p
+          className="font-body text-xs mb-3 flex items-center gap-1.5"
+          style={{ color: "rgba(0,255,136,0.7)" }}
+        >
+          <span>✓</span>
+          <span>Valid TX hash format — click Verify to confirm on-chain</span>
+        </p>
+      )}
+      {!showError && !(isValid && txHash) && verifyState === "idle" && (
+        <div className="mb-3" />
+      )}
+
+      {/* Help link — relative positioned for tooltip */}
+      <div className="relative mb-5">
+        <button
+          type="button"
+          onClick={() => {
+            setShowHelp(!showHelp);
+            haptic("tap");
+          }}
+          className="font-body text-xs underline transition-smooth"
+          style={{ color: "rgba(0,255,136,0.55)" }}
+          data-ocid="wizard.txhash_help_link"
+        >
+          Where do I find my TX hash? →
+        </button>
+        <TxHashHelpTooltip open={showHelp} onClose={() => setShowHelp(false)} />
+      </div>
+
+      {/* Verification state feedback */}
+      {verifyState === "verifying" && (
+        <div
+          className="rounded-xl p-4 mb-5 border flex items-center gap-3 step-enter"
+          style={{
+            backgroundColor: "rgba(0,255,136,0.03)",
+            borderColor: "rgba(0,255,136,0.2)",
+          }}
+          data-ocid="wizard.txhash_verify.loading_state"
+        >
+          <span
+            className="pulse-dot w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: "#00ff88" }}
+          />
+          <div>
+            <p
+              className="font-mono text-sm font-bold"
+              style={{ color: "#00ff88" }}
+            >
+              Confirming transaction on Solana blockchain…
+            </p>
+            <p
+              className="font-body text-xs"
+              style={{ color: "rgba(255,255,255,0.35)" }}
+            >
+              Querying Solana mainnet. This takes a moment.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {verifyState === "confirmed" && (
+        <div
+          className="rounded-xl p-4 mb-5 border flex items-center gap-3 step-enter"
+          style={{
+            backgroundColor: "rgba(0,255,136,0.06)",
+            borderColor: "rgba(0,255,136,0.4)",
+          }}
+          data-ocid="wizard.txhash_verify.success_state"
+        >
+          <div
+            className="check-pop w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{
+              backgroundColor: "#00ff88",
+              boxShadow: "0 0 16px rgba(0,255,136,0.5)",
+            }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              role="img"
+            >
+              <title>Confirmed</title>
+              <path
+                d="M2.5 7L5.5 10L11 4"
+                stroke="#0d0d0d"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <div>
+            <p className="font-mono text-sm font-bold text-white">
+              Transaction Confirmed on-chain ✓
+            </p>
+            <p
+              className="font-body text-xs"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              Activating your boost now…
+            </p>
+          </div>
+        </div>
+      )}
+
+      {verifyState === "not_found" && (
+        <div
+          className="rounded-xl p-4 mb-5 border flex items-start gap-3 step-enter"
+          style={{
+            backgroundColor: "rgba(255,80,80,0.04)",
+            borderColor: "rgba(255,80,80,0.3)",
+          }}
+          data-ocid="wizard.txhash_verify.error_state"
+        >
+          <span className="text-lg flex-shrink-0">❌</span>
+          <div>
+            <p
+              className="font-body text-sm font-semibold mb-1"
+              style={{ color: "#ff5050" }}
+            >
+              Transaction not found on Solana blockchain
+            </p>
+            <p
+              className="font-body text-xs"
+              style={{ color: "rgba(255,80,80,0.7)" }}
+            >
+              The TX hash was not found on Solana mainnet. Check your
+              transaction history and paste the correct signature. Do not
+              proceed until you have the right hash.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {verifyState === "rpc_error" && (
+        <div
+          className="rounded-xl p-4 mb-4 border step-enter"
+          style={{
+            backgroundColor: "rgba(255,170,0,0.04)",
+            borderColor: "rgba(255,170,0,0.25)",
+          }}
+          data-ocid="wizard.txhash_verify.rpc_error_state"
+        >
+          <div className="flex items-start gap-3 mb-3">
+            <span className="text-lg flex-shrink-0">⚠️</span>
+            <div>
+              <p
+                className="font-body text-sm font-semibold mb-1"
+                style={{ color: "#ffaa00" }}
+              >
+                Could not confirm transaction automatically
+              </p>
+              <p
+                className="font-body text-xs"
+                style={{ color: "rgba(255,170,0,0.7)" }}
+              >
+                {rpcErrorMsg || "Solana RPC returned an error."} Please
+                double-check your TX hash on{" "}
+                <a
+                  href={`https://solscan.io/tx/${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                  style={{ color: "#ffaa00" }}
+                >
+                  Solscan
+                </a>{" "}
+                before proceeding.
+              </p>
+            </div>
+          </div>
+          {/* Manual override checkbox */}
+          <label
+            className="flex items-start gap-3 cursor-pointer"
+            data-ocid="wizard.txhash_manual_override"
+          >
+            <input
+              type="checkbox"
+              checked={manualOverride}
+              onChange={(e) => {
+                setManualOverride(e.target.checked);
+                haptic("tap");
+              }}
+              className="mt-0.5 w-4 h-4 flex-shrink-0 accent-amber-400"
+              data-ocid="wizard.txhash_manual_override.checkbox"
+            />
+            <span
+              className="font-body text-xs"
+              style={{ color: "rgba(255,170,0,0.85)" }}
+            >
+              I confirm I sent the correct amount (
+              <strong>{pkg.solCostFmt}</strong>) to the correct wallet address
+              and my TX hash is accurate.
+            </span>
+          </label>
+        </div>
+      )}
+
+      {/* Verify button — shown unless already confirmed */}
+      {verifyState !== "confirmed" && verifyState !== "rpc_error" && (
+        <button
+          type="button"
+          className="btn-cta w-full py-4 rounded-xl font-display font-bold text-base flex items-center justify-center gap-2.5"
+          disabled={!isValid || verifying}
+          onClick={handleVerify}
+          data-ocid="wizard.txhash_verify_button"
+          style={
+            !isValid || verifying
+              ? { opacity: 0.4, cursor: "not-allowed" }
+              : { animation: "buttonGlowPulse 2s ease-in-out infinite" }
+          }
+        >
+          {verifying ? (
+            <>
+              <svg
+                className="spinner w-5 h-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                role="img"
+              >
+                <title>Verifying</title>
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="rgba(0,0,0,0.3)"
+                  strokeWidth="3"
+                />
+                <path
+                  d="M12 2a10 10 0 0 1 10 10"
+                  stroke="#0d0d0d"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+              Confirming on Solana…
+            </>
+          ) : verifyState === "not_found" ? (
+            <>🔍 Try Again</>
+          ) : (
+            <>🔍 Verify & Activate Boost</>
+          )}
+        </button>
+      )}
+
+      {/* Re-verify button when in not_found state for clarity */}
+      {verifyState === "not_found" && (
+        <p
+          className="font-body text-xs text-center mt-3"
+          style={{ color: "rgba(255,80,80,0.6)" }}
+        >
+          Fix your TX hash above, then click Try Again.
+        </p>
+      )}
+
+      {/* Manual continue button — only for RPC error with override */}
+      {verifyState === "rpc_error" && (
+        <div className="flex gap-3 mt-2">
+          <button
+            type="button"
+            className="flex-1 py-3.5 rounded-xl font-body font-semibold text-sm border transition-smooth"
+            onClick={() => {
+              setVerifyState("idle");
+              setManualOverride(false);
+              haptic("tap");
+            }}
+            style={{
+              borderColor: "rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.5)",
+              background: "transparent",
+            }}
+            data-ocid="wizard.txhash_retry_button"
+          >
+            ← Re-enter Hash
+          </button>
+          <button
+            type="button"
+            className="flex-[2] py-3.5 rounded-xl font-display font-bold text-base transition-smooth flex items-center justify-center gap-2"
+            disabled={!canContinueAfterRpcError || verifying}
+            onClick={handleManualContinue}
+            data-ocid="wizard.txhash_manual_continue_button"
+            style={
+              canContinueAfterRpcError && !verifying
+                ? {
+                    backgroundColor: "rgba(255,170,0,0.15)",
+                    color: "#ffaa00",
+                    border: "1.5px solid rgba(255,170,0,0.4)",
+                  }
+                : {
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                    color: "rgba(255,255,255,0.2)",
+                    border: "1.5px solid rgba(255,255,255,0.08)",
+                    cursor: "not-allowed",
+                  }
+            }
+          >
+            {verifying ? (
+              <>
+                <svg
+                  className="spinner w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  role="img"
+                >
+                  <title>Submitting</title>
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="rgba(255,170,0,0.2)"
+                    strokeWidth="3"
+                  />
+                  <path
+                    d="M12 2a10 10 0 0 1 10 10"
+                    stroke="#ffaa00"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                Submitting…
+              </>
+            ) : (
+              <>Submit Manually →</>
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Particle burst (CSS confetti) ─────────────────────────────────────── */
 
 function ParticleBurst() {
@@ -717,11 +1528,11 @@ function ParticleBurst() {
     >
       {particles.map((i) => {
         const angle = (i / particles.length) * 360;
-        const dist = 60 + Math.random() * 40;
-        const size = 4 + Math.random() * 6;
+        const dist = 60 + (i % 3) * 15;
+        const size = 4 + (i % 4);
         return (
           <div
-            key={i}
+            key={`p-${i}`}
             className="absolute rounded-full"
             style={{
               width: size,
@@ -744,20 +1555,23 @@ function ParticleBurst() {
   );
 }
 
-/* ─── Step 4: Confirmation ───────────────────────────────────────────────── */
+/* ─── Step 5: Boost Confirmed ────────────────────────────────────────────── */
 
-export function WizardStep4Confirm({
+export function WizardStep5Confirm({
   pkgIndex,
   orderId,
+  txHash,
   onRestart,
 }: {
   pkgIndex: number;
   orderId: string;
+  txHash: string;
   onRestart: () => void;
 }) {
   const pkg = VOLUME_PACKAGES[pkgIndex];
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"Processing" | "Active">("Processing");
+  const timestamp = new Date().toLocaleString();
 
   useEffect(() => {
     haptic("confirm");
@@ -778,7 +1592,9 @@ export function WizardStep4Confirm({
       `Tier:     ${pkg.name}`,
       `Volume:   ${pkg.targetVolumeFmt}`,
       `Cost:     ${pkg.solCostFmt}`,
+      `TX Hash:  ${txHash ? formatAddress(txHash, 8, 8) : "N/A"}`,
       `Status:   ${status}`,
+      `Time:     ${timestamp}`,
       "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
     ].join("\n");
     navigator.clipboard.writeText(receipt).then(() => {
@@ -789,7 +1605,7 @@ export function WizardStep4Confirm({
 
   const handleShare = () => {
     const text = encodeURIComponent(
-      `🚀 My boost is live! Order #${orderId}\n${pkg.targetVolumeFmt} volume boost running on @pumpdotfun\nPowered by Pump.Fun VolBoost ⚡ #Solana #PumpFun`,
+      `🚀 My boost is LIVE! Order #${orderId}\n${pkg.targetVolumeFmt} volume boost running on @pumpdotfun\nPowered by Pump.Fun VolBoost ⚡ #Solana #PumpFun`,
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
     haptic("tap");
@@ -860,6 +1676,11 @@ export function WizardStep4Confirm({
       >
         {[
           { label: "ORDER ID", value: `#${orderId}`, mono: true },
+          {
+            label: "TX HASH",
+            value: txHash ? formatAddress(txHash, 8, 8) : "—",
+            mono: true,
+          },
           { label: "STATUS", isStatus: true, value: status },
           { label: "VOLUME TARGET", value: pkg.targetVolumeFmt, mono: false },
           {
@@ -985,19 +1806,34 @@ export function WizardStep4Confirm({
       <div
         className="rounded-xl p-4 mb-5 border text-left"
         style={{
-          backgroundColor: "#0f0f0f",
-          borderColor: "rgba(255,255,255,0.06)",
+          background:
+            "linear-gradient(135deg, #0f0f0f 0%, rgba(0,255,136,0.03) 100%)",
+          borderColor: "rgba(0,255,136,0.12)",
         }}
         data-ocid="wizard.receipt_card"
       >
-        <p className="font-body text-sm text-white mb-1">
+        <p className="font-body text-sm text-white mb-1 font-semibold">
           My boost is live! 🚀
         </p>
         <p
-          className="font-mono text-xs mb-3"
+          className="font-mono text-xs mb-1"
           style={{ color: "rgba(255,255,255,0.35)" }}
         >
-          {formatAddress(PAYMENT_WALLET)} · {pkg.name} · {pkg.solCostFmt}
+          {pkg.name} · {pkg.solCostFmt} · {pkg.targetVolumeFmt}
+        </p>
+        {txHash && (
+          <p
+            className="font-mono text-[10px] mb-3"
+            style={{ color: "rgba(0,255,136,0.5)" }}
+          >
+            TX: {formatAddress(txHash, 8, 8)}
+          </p>
+        )}
+        <p
+          className="font-mono text-[10px] mb-3"
+          style={{ color: "rgba(255,255,255,0.2)" }}
+        >
+          {timestamp}
         </p>
         <button
           type="button"
@@ -1173,8 +2009,12 @@ export function LiveActivityPanel() {
 export function Wizard() {
   const [step, setStep] = useState<WizardStep>(1);
   const [ca, setCA] = useState("");
+  const [verifiedToken, setVerifiedToken] = useState<TokenMetadata | null>(
+    null,
+  );
   const [selectedPkg, setSelectedPkg] = useState<number | null>(null);
   const [orderId, setOrderId] = useState(() => generateOrderId());
+  const [txHash, setTxHash] = useState("");
 
   const completedSteps = Array.from(
     { length: step - 1 },
@@ -1184,8 +2024,10 @@ export function Wizard() {
   const handleRestart = () => {
     setStep(1);
     setCA("");
+    setVerifiedToken(null);
     setSelectedPkg(null);
     setOrderId(generateOrderId());
+    setTxHash("");
   };
 
   return (
@@ -1203,7 +2045,7 @@ export function Wizard() {
             className="font-body text-sm mt-1"
             style={{ color: "rgba(255,255,255,0.35)" }}
           >
-            Boost your Solana meme coin in 4 simple steps
+            Boost your Solana meme coin in 5 simple steps
           </p>
         </div>
 
@@ -1214,10 +2056,10 @@ export function Wizard() {
             style={{
               backgroundColor: "#0f0f0f",
               borderColor:
-                step === 1 || step === 4
+                step === 1 || step === 5
                   ? "rgba(0,255,136,0.25)"
                   : "rgba(255,255,255,0.07)",
-              ...(step === 1 || step === 4
+              ...(step === 1 || step === 5
                 ? { boxShadow: "0 0 32px rgba(0,255,136,0.06)" }
                 : {}),
             }}
@@ -1231,8 +2073,13 @@ export function Wizard() {
             {step === 1 && (
               <WizardStep1CA
                 value={ca}
-                onChange={setCA}
+                onChange={(v) => {
+                  setCA(v);
+                  setVerifiedToken(null);
+                }}
                 onNext={() => setStep(2)}
+                onTokenVerified={setVerifiedToken}
+                verifiedToken={verifiedToken}
               />
             )}
             {step === 2 && (
@@ -1255,9 +2102,17 @@ export function Wizard() {
               />
             )}
             {step === 4 && selectedPkg !== null && (
-              <WizardStep4Confirm
+              <WizardStep4TxHash
+                orderId={orderId}
+                pkgIndex={selectedPkg}
+                onConfirmed={() => setStep(5)}
+              />
+            )}
+            {step === 5 && selectedPkg !== null && (
+              <WizardStep5Confirm
                 pkgIndex={selectedPkg}
                 orderId={orderId}
+                txHash={txHash}
                 onRestart={handleRestart}
               />
             )}

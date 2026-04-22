@@ -9,6 +9,7 @@ interface Service {
   description: string;
   icon: string;
   live: boolean;
+  comingSoonLabel?: string;
 }
 
 const SERVICES: Service[] = [
@@ -26,6 +27,7 @@ const SERVICES: Service[] = [
     description: "Launch your token on Pump.fun or Bonk with one click",
     icon: "🚀",
     live: false,
+    comingSoonLabel: "Q3 2025",
   },
   {
     id: "token-creator",
@@ -54,6 +56,7 @@ const SERVICES: Service[] = [
     description: "Bundle multiple transactions for maximum efficiency",
     icon: "📦",
     live: false,
+    comingSoonLabel: "HOT",
   },
   {
     id: "pumpfun-zone",
@@ -61,6 +64,7 @@ const SERVICES: Service[] = [
     description: "Full suite of Pump.fun tools — trend, boost, snipe, and more",
     icon: "🔥",
     live: false,
+    comingSoonLabel: "Q3 2025",
   },
   {
     id: "bonk-zone",
@@ -208,6 +212,8 @@ function ServiceCard({
     document.getElementById("boost")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const isHotLabel = service.comingSoonLabel === "HOT";
+
   return (
     <div
       role={service.live ? "button" : undefined}
@@ -221,7 +227,7 @@ function ServiceCard({
       onKeyDown={(e) => {
         if (service.live && (e.key === "Enter" || e.key === " ")) handleClick();
       }}
-      className="relative flex flex-col gap-3 p-5 rounded-xl border transition-all duration-300"
+      className="relative flex flex-col gap-3 p-5 rounded-xl border transition-all duration-300 overflow-hidden"
       style={{
         backgroundColor: "rgba(255,255,255,0.025)",
         borderColor: service.live
@@ -229,24 +235,23 @@ function ServiceCard({
           : "rgba(255,255,255,0.06)",
         cursor: service.live ? "pointer" : "default",
         transform: visible ? "translateY(0)" : "translateY(20px)",
-        opacity: visible ? (service.live ? 1 : 0.58) : 0,
-        transition: `opacity 0.45s ease ${index * 40}ms, transform 0.45s cubic-bezier(0.34,1.56,0.64,1) ${index * 40}ms, border-color 0.25s ease, box-shadow 0.25s ease`,
+        opacity: visible ? (service.live ? 1 : 0.62) : 0,
+        transition: `opacity 0.45s ease ${index * 35}ms, transform 0.45s cubic-bezier(0.34,1.56,0.64,1) ${index * 35}ms, border-color 0.25s ease, box-shadow 0.25s ease`,
       }}
       onMouseEnter={(e) => {
         if (!service.live) return;
-        (e.currentTarget as HTMLDivElement).style.borderColor =
-          "rgba(0,255,136,0.45)";
-        (e.currentTarget as HTMLDivElement).style.boxShadow =
-          "0 0 20px rgba(0,255,136,0.18), 0 8px 24px rgba(0,0,0,0.35)";
-        (e.currentTarget as HTMLDivElement).style.transform =
-          "translateY(-3px)";
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderColor = "rgba(0,255,136,0.5)";
+        el.style.boxShadow =
+          "0 0 24px rgba(0,255,136,0.18), 0 8px 24px rgba(0,0,0,0.35)";
+        el.style.transform = "translateY(-3px)";
       }}
       onMouseLeave={(e) => {
         if (!service.live) return;
-        (e.currentTarget as HTMLDivElement).style.borderColor =
-          "rgba(0,255,136,0.22)";
-        (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderColor = "rgba(0,255,136,0.22)";
+        el.style.boxShadow = "none";
+        el.style.transform = "translateY(0)";
       }}
     >
       {/* Badge top-right */}
@@ -258,13 +263,30 @@ function ServiceCard({
           >
             LIVE
           </span>
+        ) : service.comingSoonLabel ? (
+          <span
+            className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold font-mono tracking-wider"
+            style={{
+              backgroundColor: isHotLabel
+                ? "rgba(255,100,50,0.15)"
+                : "rgba(0,255,136,0.06)",
+              color: isHotLabel ? "#ff6432" : "rgba(0,255,136,0.5)",
+              border: `1px solid ${isHotLabel ? "rgba(255,100,50,0.3)" : "rgba(0,255,136,0.2)"}`,
+              animation: "badgePulse 2s ease-in-out infinite",
+              boxShadow: isHotLabel
+                ? "0 0 8px rgba(255,100,50,0.2)"
+                : "0 0 8px rgba(0,255,136,0.12)",
+            }}
+          >
+            {service.comingSoonLabel}
+          </span>
         ) : (
           <span
             className="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold font-mono tracking-wider"
             style={{
-              backgroundColor: "rgba(255,255,255,0.05)",
-              color: "rgba(255,255,255,0.25)",
-              border: "1px solid rgba(255,255,255,0.09)",
+              backgroundColor: "rgba(0,255,136,0.04)",
+              color: "rgba(0,255,136,0.3)",
+              border: "1px solid rgba(0,255,136,0.12)",
             }}
           >
             SOON

@@ -242,6 +242,64 @@ export function Footer() {
           </p>
         </div>
       </div>
+
+      {/* Pump.Fun branding bar */}
+      <div
+        className="border-t"
+        style={{
+          borderColor: "rgba(0,255,136,0.12)",
+          background:
+            "linear-gradient(90deg, rgba(0,255,136,0.03) 0%, rgba(0,255,136,0.06) 50%, rgba(0,255,136,0.03) 100%)",
+          boxShadow: "0 -1px 0 rgba(0,255,136,0.08) inset",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-center gap-3">
+          <div
+            className="h-px flex-1"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, rgba(0,255,136,0.2))",
+            }}
+            aria-hidden
+          />
+          <div className="flex items-center gap-2.5">
+            <span
+              className="w-5 h-5 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: "#00ff88" }}
+            >
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 18 18"
+                fill="none"
+                role="img"
+                aria-label="Pump.Fun logo"
+              >
+                <path
+                  d="M9 2L3 6v6l6 4 6-4V6L9 2z"
+                  fill="#0d0d0d"
+                  fillOpacity="0.85"
+                />
+                <circle cx="9" cy="9" r="2.5" fill="#0d0d0d" />
+              </svg>
+            </span>
+            <span
+              className="font-mono text-[10px] font-bold tracking-[0.2em]"
+              style={{ color: "rgba(0,255,136,0.5)" }}
+            >
+              PUMP.FUN VOLBOOST · SOLANA ECOSYSTEM TOOL
+            </span>
+          </div>
+          <div
+            className="h-px flex-1"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(0,255,136,0.2), transparent)",
+            }}
+            aria-hidden
+          />
+        </div>
+      </div>
     </footer>
   );
 }

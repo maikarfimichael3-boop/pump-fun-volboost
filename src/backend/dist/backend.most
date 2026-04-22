@@ -1,13 +1,16 @@
-// Version: 1.0.0
+// Version: 3.0.0
 type BoostOrder__196794398 =
   {
     ca : Text;
+    coinName : ?Text;
+    coinSymbol : ?Text;
     createdAt : Int;
     estimatedCompletionTime : Int;
     id : Text;
     solAmount : Float;
     status : BoostStatus__830585890;
     tier : BoostTier__552651502;
+    txHash : Text;
     volumeAchieved : Nat;
     volumeTarget : Nat;
     walletAddress : Text
@@ -21,16 +24,123 @@ type Data__791452850<K, V> =
 type Internal__8484328<K, V> =
   {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
 type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type Map__158565046<K, V> = Map__297112838<K, V>;
+type Map__297112838<K, V> =
+  {var root : Node__46230540<K, V>; var size : Nat__490723111};
+type Map__605269027<K, V> = Map__158565046<K, V>;
 type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
-actor {
+type OldBoostOrder__224117789 =
+  {
+    ca : Text;
+    createdAt : Int;
+    estimatedCompletionTime : Int;
+    id : Text;
+    solAmount : Float;
+    status : OldBoostStatus__370435002;
+    tier : OldBoostTier__484650941;
+    txHash : Text;
+    volumeAchieved : Nat;
+    volumeTarget : Nat;
+    walletAddress : Text
+  };
+type OldBoostStatus__370435002 =
+  {#Active; #Completed; #Failed; #Pending; #Processing};
+type OldBoostTier__484650941 =
+  {#Advanced; #Basic; #Elite; #Growth; #Premium; #Pro; #Starter; #Ultra};
+actor ({
+  in currentOrders : Map__605269027<Text, OldBoostOrder__224117789>;
+  stable ic :
+    actor {
+      http_request :
+        shared {
+                 body : ?Blob;
+                 headers : [{name : Text; value : Text}];
+                 is_replicated : ?Bool;
+                 max_response_bytes : ?Nat64;
+                 method : {#get; #head; #post};
+                 transform :
+                   ?{
+                      context : Blob;
+                      function :
+                        shared query {
+                                       context : Blob;
+                                       response :
+                                         {
+                                           body : Blob;
+                                           headers :
+                                             [{name : Text; value : Text}];
+                                           status : Nat
+                                         }
+                                     } ->
+                          async
+                            {
+                              body : Blob;
+                              headers : [{name : Text; value : Text}];
+                              status : Nat
+                            }
+                    };
+                 url : Text
+               } ->
+          async
+            {
+              body : Blob;
+              headers : [{name : Text; value : Text}];
+              status : Nat
+            }
+    };
+  in initialSeedOrders : [OldBoostOrder__224117789];
+  in var nextOrderIndex : Nat;
+  in var stableOrders : [(Text, OldBoostOrder__224117789)]
+}, {
   stable currentOrders :
     {
       var root : Node__46230540<Text, BoostOrder__196794398>;
       var size : Nat__490723111
     };
+  stable ic :
+    actor {
+      http_request :
+        shared {
+                 body : ?Blob;
+                 headers : [{name : Text; value : Text}];
+                 is_replicated : ?Bool;
+                 max_response_bytes : ?Nat64;
+                 method : {#get; #head; #post};
+                 transform :
+                   ?{
+                      context : Blob;
+                      function :
+                        shared query {
+                                       context : Blob;
+                                       response :
+                                         {
+                                           body : Blob;
+                                           headers :
+                                             [{name : Text; value : Text}];
+                                           status : Nat
+                                         }
+                                     } ->
+                          async
+                            {
+                              body : Blob;
+                              headers : [{name : Text; value : Text}];
+                              status : Nat
+                            }
+                    };
+                 url : Text
+               } ->
+          async
+            {
+              body : Blob;
+              headers : [{name : Text; value : Text}];
+              status : Nat
+            }
+    };
   stable initialSeedOrders : [BoostOrder__196794398];
-  stable var nextOrderIndex : Nat
-};
+  stable var nextOrderIndex : Nat;
+  stable var telegramBotToken : Text;
+  stable var telegramChatId : Text
+}) ;

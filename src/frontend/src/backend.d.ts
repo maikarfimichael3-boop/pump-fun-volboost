@@ -36,9 +36,12 @@ export interface BoostOrder {
     solAmount: number;
     volumeTarget: bigint;
     createdAt: bigint;
+    coinSymbol?: string;
     tier: BoostTier;
     walletAddress: string;
     volumeAchieved: bigint;
+    txHash: string;
+    coinName?: string;
     estimatedCompletionTime: bigint;
 }
 export enum BoostStatus {
@@ -65,7 +68,37 @@ export interface backendInterface {
     getBoostProgress(orderId: string): Promise<BoostProgress | null>;
     getLeaderboard(limit: bigint): Promise<Array<LeaderboardEntry>>;
     getTierInfo(): Promise<Array<TierInfo>>;
+    sendTelegramNotification(orderId: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    setTelegramConfig(botToken: string, chatId: string): Promise<void>;
     simulateProgressUpdate(): Promise<void>;
     submitBoostOrder(ca: string, tier: string, walletAddress: string): Promise<BoostOrder>;
+    submitBoostOrderWithCoin(ca: string, tier: string, walletAddress: string, coinName: string, coinSymbol: string): Promise<BoostOrder>;
+    submitTxHash(orderId: string, txHash: string): Promise<{
+        __kind__: "ok";
+        ok: BoostOrder;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     updateBoostStatus(orderId: string, status: string): Promise<boolean>;
+    verifyAndActivateBoost(orderId: string): Promise<{
+        __kind__: "ok";
+        ok: BoostOrder;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    verifyTxHashOnChain(txHash: string): Promise<{
+        __kind__: "ok";
+        ok: boolean;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
 }

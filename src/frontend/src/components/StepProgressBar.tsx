@@ -1,12 +1,13 @@
 import type { WizardStep } from "@/types";
 
-/* ─── Step labels ────────────────────────────────────────────────────────── */
+/* ─── Step labels — 5 steps ──────────────────────────────────────────────── */
 
 const STEPS: { num: WizardStep; label: string; shortLabel: string }[] = [
-  { num: 1, label: "Token Address", shortLabel: "TOKEN" },
-  { num: 2, label: "Select Package", shortLabel: "PACKAGE" },
-  { num: 3, label: "Review Order", shortLabel: "REVIEW" },
-  { num: 4, label: "Confirmed", shortLabel: "LIVE" },
+  { num: 1, label: "Token", shortLabel: "TOKEN" },
+  { num: 2, label: "Package", shortLabel: "PACKAGE" },
+  { num: 3, label: "Payment", shortLabel: "PAYMENT" },
+  { num: 4, label: "Verify TX", shortLabel: "VERIFY TX" },
+  { num: 5, label: "Active", shortLabel: "ACTIVE" },
 ];
 
 /* ─── Props ──────────────────────────────────────────────────────────────── */
@@ -44,8 +45,9 @@ export function StepProgressBar({
           style={{
             width: `${pct}%`,
             background:
-              "linear-gradient(90deg, #00ff88 0%, rgba(0,255,136,0.6) 100%)",
-            boxShadow: "0 0 8px rgba(0,255,136,0.5)",
+              "linear-gradient(90deg, #00ff88 0%, rgba(0,255,136,0.7) 100%)",
+            boxShadow:
+              "0 0 10px rgba(0,255,136,0.7), 0 0 20px rgba(0,255,136,0.3)",
           }}
           aria-hidden
         />
@@ -65,6 +67,7 @@ export function StepProgressBar({
               {/* Dot */}
               <div
                 className={`step-dot ${isActive ? "active" : isDone ? "completed" : ""}`}
+                style={{ width: 38, height: 38 }}
                 aria-label={`Step ${s.num}: ${s.label}${isDone ? " (completed)" : isActive ? " (current)" : ""}`}
               >
                 {isDone ? (

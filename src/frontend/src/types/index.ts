@@ -13,13 +13,15 @@ export interface VolumePackage {
   popular?: boolean;
 }
 
-export type WizardStep = 1 | 2 | 3 | 4;
+/** 1=CA input, 2=Package, 3=Payment review, 4=TX Hash, 5=Boost confirmed */
+export type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 export interface BoostSession {
   ca: string;
   packageId: string;
   walletPublicKey?: string;
   orderId: string;
+  txHash?: string;
   status: "pending" | "running" | "completed" | "failed";
   createdAt: number;
 }
@@ -40,4 +42,16 @@ export interface BoostProgress {
   percentage: number;
   volumeAdded: number;
   timeRemaining: number;
+}
+
+export interface TokenMetadata {
+  address: string;
+  name: string;
+  symbol: string;
+  logoURI?: string;
+  decimals: number;
+  source: "pumpfun" | "jupiter" | "dexscreener" | null;
+  isPumpFunToken: boolean;
+  marketCap?: number;
+  usdMarketCap?: number;
 }

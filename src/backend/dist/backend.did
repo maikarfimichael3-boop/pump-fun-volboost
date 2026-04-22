@@ -45,12 +45,15 @@ type BoostProgress =
 type BoostOrder = 
  record {
    ca: text;
+   coinName: opt text;
+   coinSymbol: opt text;
    createdAt: int;
    estimatedCompletionTime: int;
    id: text;
    solAmount: float64;
    status: BoostStatus;
    tier: BoostTier;
+   txHash: text;
    volumeAchieved: nat;
    volumeTarget: nat;
    walletAddress: text;
@@ -62,8 +65,30 @@ service : {
   getBoostProgress: (orderId: text) -> (opt BoostProgress) query;
   getLeaderboard: (limit: nat) -> (vec LeaderboardEntry) query;
   getTierInfo: () -> (vec TierInfo) query;
+  sendTelegramNotification: (orderId: text) ->
+   (variant {
+      err: text;
+      ok: text;
+    });
+  setTelegramConfig: (botToken: text, chatId: text) -> ();
   simulateProgressUpdate: () -> ();
   submitBoostOrder: (ca: text, tier: text, walletAddress: text) ->
    (BoostOrder);
+  submitBoostOrderWithCoin: (ca: text, tier: text, walletAddress: text,
+   coinName: text, coinSymbol: text) -> (BoostOrder);
+  submitTxHash: (orderId: text, txHash: text) ->
+   (variant {
+      err: text;
+      ok: BoostOrder;
+    });
   updateBoostStatus: (orderId: text, status: text) -> (bool);
+  verifyAndActivateBoost: (orderId: text) ->
+   (variant {
+      err: text;
+      ok: BoostOrder;
+    });
+  verifyTxHashOnChain: (txHash: text) -> (variant {
+                                            err: text;
+                                            ok: bool;
+                                          });
 }

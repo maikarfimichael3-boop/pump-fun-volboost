@@ -1,5 +1,56 @@
 import { haptic } from "@/utils/haptic";
 
+/* ─── Ticker items ──────────────────────────────────────────────────────── */
+
+const TICKER_ITEMS = [
+  "⚡ VERIFIED ON-CHAIN",
+  "🟢 PUMP.FUN POWERED",
+  "🚀 1,200+ TOKENS BOOSTED",
+  "📈 AVERAGE 94% SUCCESS RATE",
+  "🔒 FULLY NON-CUSTODIAL",
+  "⚡ REAL-TIME VOLUME TRACKING",
+  "💎 INSTANT ACTIVATION",
+  "🌐 SOLANA NATIVE",
+];
+
+function TickerBar() {
+  // Double the items for seamless loop; prefix second set with "b-" for unique keys
+  const items = TICKER_ITEMS.map((t, i) => ({ text: t, key: `a-${i}` })).concat(
+    TICKER_ITEMS.map((t, i) => ({ text: t, key: `b-${i}` })),
+  );
+  return (
+    <div
+      className="ticker-bar-outer overflow-hidden border-b border-t"
+      style={{
+        backgroundColor: "rgba(0,255,136,0.04)",
+        borderColor: "rgba(0,255,136,0.15)",
+        borderTopColor: "rgba(0,255,136,0.08)",
+      }}
+      aria-hidden
+    >
+      <div className="ticker-track flex items-center py-2.5">
+        {items.map((item) => (
+          <div
+            key={item.key}
+            className="flex items-center gap-3 flex-shrink-0 mx-6"
+          >
+            <span
+              className="font-mono text-[10px] font-bold tracking-[0.18em] whitespace-nowrap"
+              style={{ color: "rgba(0,255,136,0.75)" }}
+            >
+              {item.text}
+            </span>
+            <span
+              className="w-1 h-1 rounded-full flex-shrink-0"
+              style={{ backgroundColor: "rgba(0,255,136,0.3)" }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Animated Terminal Canvas Background ──────────────────────────────── */
 
 function TerminalGrid() {
@@ -113,12 +164,12 @@ export function Hero() {
     <section
       id="hero"
       className="relative flex flex-col items-center justify-center text-center px-4 overflow-hidden"
-      style={{ minHeight: "92vh", paddingTop: "96px", paddingBottom: "64px" }}
+      style={{ minHeight: "92vh", paddingTop: "96px", paddingBottom: "0" }}
       data-ocid="hero.section"
     >
       <TerminalGrid />
 
-      <div className="relative z-10 w-full max-w-3xl mx-auto flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-3xl mx-auto flex flex-col items-center pb-16">
         {/* LIVE badge */}
         <div
           className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border mb-8 font-body text-[11px] font-bold tracking-[0.18em] uppercase step-enter"
@@ -241,9 +292,14 @@ export function Hero() {
         </div>
       </div>
 
+      {/* Ticker bar — at the bottom of hero */}
+      <div className="relative z-10 w-full">
+        <TickerBar />
+      </div>
+
       {/* Scroll indicator */}
       <div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 step-enter"
+        className="absolute bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 step-enter"
         style={{ animationDelay: "400ms" }}
         aria-hidden
       >

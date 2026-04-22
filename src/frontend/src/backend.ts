@@ -118,9 +118,12 @@ export interface BoostOrder {
     solAmount: number;
     volumeTarget: bigint;
     createdAt: bigint;
+    coinSymbol?: string;
     tier: BoostTier;
     walletAddress: string;
     volumeAchieved: bigint;
+    txHash: string;
+    coinName?: string;
     estimatedCompletionTime: bigint;
 }
 export enum BoostStatus {
@@ -147,9 +150,39 @@ export interface backendInterface {
     getBoostProgress(orderId: string): Promise<BoostProgress | null>;
     getLeaderboard(limit: bigint): Promise<Array<LeaderboardEntry>>;
     getTierInfo(): Promise<Array<TierInfo>>;
+    sendTelegramNotification(orderId: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    setTelegramConfig(botToken: string, chatId: string): Promise<void>;
     simulateProgressUpdate(): Promise<void>;
     submitBoostOrder(ca: string, tier: string, walletAddress: string): Promise<BoostOrder>;
+    submitBoostOrderWithCoin(ca: string, tier: string, walletAddress: string, coinName: string, coinSymbol: string): Promise<BoostOrder>;
+    submitTxHash(orderId: string, txHash: string): Promise<{
+        __kind__: "ok";
+        ok: BoostOrder;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     updateBoostStatus(orderId: string, status: string): Promise<boolean>;
+    verifyAndActivateBoost(orderId: string): Promise<{
+        __kind__: "ok";
+        ok: BoostOrder;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    verifyTxHashOnChain(txHash: string): Promise<{
+        __kind__: "ok";
+        ok: boolean;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
 }
 import type { BoostOrder as _BoostOrder, BoostProgress as _BoostProgress, BoostStatus as _BoostStatus, BoostTier as _BoostTier, TierInfo as _TierInfo } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -172,14 +205,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getBoostOrder(arg0);
-                return from_candid_opt_n8(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getBoostOrder(arg0);
-            return from_candid_opt_n8(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
         }
     }
     async getBoostOrdersByWallet(arg0: string): Promise<Array<BoostOrder>> {
@@ -200,14 +233,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getBoostProgress(arg0);
-                return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getBoostProgress(arg0);
-            return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
         }
     }
     async getLeaderboard(arg0: bigint): Promise<Array<LeaderboardEntry>> {
@@ -228,14 +261,48 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getTierInfo();
-                return from_candid_vec_n12(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n13(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getTierInfo();
-            return from_candid_vec_n12(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n13(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async sendTelegramNotification(arg0: string): Promise<{
+        __kind__: "ok";
+        ok: string;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.sendTelegramNotification(arg0);
+                return from_candid_variant_n16(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.sendTelegramNotification(arg0);
+            return from_candid_variant_n16(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async setTelegramConfig(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setTelegramConfig(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setTelegramConfig(arg0, arg1);
+            return result;
         }
     }
     async simulateProgressUpdate(): Promise<void> {
@@ -266,6 +333,40 @@ export class Backend implements backendInterface {
             return from_candid_BoostOrder_n2(this._uploadFile, this._downloadFile, result);
         }
     }
+    async submitBoostOrderWithCoin(arg0: string, arg1: string, arg2: string, arg3: string, arg4: string): Promise<BoostOrder> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.submitBoostOrderWithCoin(arg0, arg1, arg2, arg3, arg4);
+                return from_candid_BoostOrder_n2(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.submitBoostOrderWithCoin(arg0, arg1, arg2, arg3, arg4);
+            return from_candid_BoostOrder_n2(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async submitTxHash(arg0: string, arg1: string): Promise<{
+        __kind__: "ok";
+        ok: BoostOrder;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.submitTxHash(arg0, arg1);
+                return from_candid_variant_n17(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.submitTxHash(arg0, arg1);
+            return from_candid_variant_n17(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async updateBoostStatus(arg0: string, arg1: string): Promise<boolean> {
         if (this.processError) {
             try {
@@ -280,29 +381,72 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async verifyAndActivateBoost(arg0: string): Promise<{
+        __kind__: "ok";
+        ok: BoostOrder;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyAndActivateBoost(arg0);
+                return from_candid_variant_n17(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyAndActivateBoost(arg0);
+            return from_candid_variant_n17(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async verifyTxHashOnChain(arg0: string): Promise<{
+        __kind__: "ok";
+        ok: boolean;
+    } | {
+        __kind__: "err";
+        err: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyTxHashOnChain(arg0);
+                return from_candid_variant_n18(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyTxHashOnChain(arg0);
+            return from_candid_variant_n18(this._uploadFile, this._downloadFile, result);
+        }
+    }
 }
 function from_candid_BoostOrder_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _BoostOrder): BoostOrder {
     return from_candid_record_n3(_uploadFile, _downloadFile, value);
 }
-function from_candid_BoostProgress_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _BoostProgress): BoostProgress {
-    return from_candid_record_n11(_uploadFile, _downloadFile, value);
+function from_candid_BoostProgress_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _BoostProgress): BoostProgress {
+    return from_candid_record_n12(_uploadFile, _downloadFile, value);
 }
 function from_candid_BoostStatus_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _BoostStatus): BoostStatus {
     return from_candid_variant_n5(_uploadFile, _downloadFile, value);
 }
-function from_candid_BoostTier_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _BoostTier): BoostTier {
-    return from_candid_variant_n7(_uploadFile, _downloadFile, value);
+function from_candid_BoostTier_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _BoostTier): BoostTier {
+    return from_candid_variant_n8(_uploadFile, _downloadFile, value);
 }
-function from_candid_TierInfo_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TierInfo): TierInfo {
-    return from_candid_record_n14(_uploadFile, _downloadFile, value);
+function from_candid_TierInfo_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TierInfo): TierInfo {
+    return from_candid_record_n15(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_BoostOrder]): BoostOrder | null {
+function from_candid_opt_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_BoostProgress]): BoostProgress | null {
+    return value.length === 0 ? null : from_candid_BoostProgress_n11(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_BoostOrder]): BoostOrder | null {
     return value.length === 0 ? null : from_candid_BoostOrder_n2(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_opt_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_BoostProgress]): BoostProgress | null {
-    return value.length === 0 ? null : from_candid_BoostProgress_n10(_uploadFile, _downloadFile, value[0]);
-}
-function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     status: _BoostStatus;
     volumeTarget: bigint;
     orderId: string;
@@ -326,7 +470,7 @@ function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uin
         percentComplete: value.percentComplete
     };
 }
-function from_candid_record_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: string;
     tier: _BoostTier;
     solCost: number;
@@ -341,7 +485,7 @@ function from_candid_record_n14(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } {
     return {
         name: value.name,
-        tier: from_candid_BoostTier_n6(_uploadFile, _downloadFile, value.tier),
+        tier: from_candid_BoostTier_n7(_uploadFile, _downloadFile, value.tier),
         solCost: value.solCost,
         dollarTarget: value.dollarTarget,
         estimatedHours: value.estimatedHours
@@ -354,9 +498,12 @@ function from_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint
     solAmount: number;
     volumeTarget: bigint;
     createdAt: bigint;
+    coinSymbol: [] | [string];
     tier: _BoostTier;
     walletAddress: string;
     volumeAchieved: bigint;
+    txHash: string;
+    coinName: [] | [string];
     estimatedCompletionTime: bigint;
 }): {
     ca: string;
@@ -365,9 +512,12 @@ function from_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint
     solAmount: number;
     volumeTarget: bigint;
     createdAt: bigint;
+    coinSymbol?: string;
     tier: BoostTier;
     walletAddress: string;
     volumeAchieved: bigint;
+    txHash: string;
+    coinName?: string;
     estimatedCompletionTime: bigint;
 } {
     return {
@@ -377,11 +527,71 @@ function from_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint
         solAmount: value.solAmount,
         volumeTarget: value.volumeTarget,
         createdAt: value.createdAt,
-        tier: from_candid_BoostTier_n6(_uploadFile, _downloadFile, value.tier),
+        coinSymbol: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.coinSymbol)),
+        tier: from_candid_BoostTier_n7(_uploadFile, _downloadFile, value.tier),
         walletAddress: value.walletAddress,
         volumeAchieved: value.volumeAchieved,
+        txHash: value.txHash,
+        coinName: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.coinName)),
         estimatedCompletionTime: value.estimatedCompletionTime
     };
+}
+function from_candid_variant_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: string;
+} | {
+    err: string;
+}): {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+} {
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: value.ok
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
+    } : value;
+}
+function from_candid_variant_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: _BoostOrder;
+} | {
+    err: string;
+}): {
+    __kind__: "ok";
+    ok: BoostOrder;
+} | {
+    __kind__: "err";
+    err: string;
+} {
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: from_candid_BoostOrder_n2(_uploadFile, _downloadFile, value.ok)
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
+    } : value;
+}
+function from_candid_variant_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: boolean;
+} | {
+    err: string;
+}): {
+    __kind__: "ok";
+    ok: boolean;
+} | {
+    __kind__: "err";
+    err: string;
+} {
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: value.ok
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
+    } : value;
 }
 function from_candid_variant_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     Failed: null;
@@ -396,7 +606,7 @@ function from_candid_variant_n5(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }): BoostStatus {
     return "Failed" in value ? BoostStatus.Failed : "Active" in value ? BoostStatus.Active : "Processing" in value ? BoostStatus.Processing : "Completed" in value ? BoostStatus.Completed : "Pending" in value ? BoostStatus.Pending : value;
 }
-function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     Pro: null;
 } | {
     Elite: null;
@@ -418,8 +628,8 @@ function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uin
 function from_candid_vec_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_BoostOrder>): Array<BoostOrder> {
     return value.map((x)=>from_candid_BoostOrder_n2(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_TierInfo>): Array<TierInfo> {
-    return value.map((x)=>from_candid_TierInfo_n13(_uploadFile, _downloadFile, x));
+function from_candid_vec_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_TierInfo>): Array<TierInfo> {
+    return value.map((x)=>from_candid_TierInfo_n14(_uploadFile, _downloadFile, x));
 }
 export interface CreateActorOptions {
     agent?: Agent;

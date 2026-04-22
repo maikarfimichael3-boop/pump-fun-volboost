@@ -17,9 +17,12 @@ export interface BoostOrder {
   'solAmount' : number,
   'volumeTarget' : bigint,
   'createdAt' : bigint,
+  'coinSymbol' : [] | [string],
   'tier' : BoostTier,
   'walletAddress' : string,
   'volumeAchieved' : bigint,
+  'txHash' : string,
+  'coinName' : [] | [string],
   'estimatedCompletionTime' : bigint,
 }
 export interface BoostProgress {
@@ -64,9 +67,34 @@ export interface _SERVICE {
   'getBoostProgress' : ActorMethod<[string], [] | [BoostProgress]>,
   'getLeaderboard' : ActorMethod<[bigint], Array<LeaderboardEntry>>,
   'getTierInfo' : ActorMethod<[], Array<TierInfo>>,
+  'sendTelegramNotification' : ActorMethod<
+    [string],
+    { 'ok' : string } |
+      { 'err' : string }
+  >,
+  'setTelegramConfig' : ActorMethod<[string, string], undefined>,
   'simulateProgressUpdate' : ActorMethod<[], undefined>,
   'submitBoostOrder' : ActorMethod<[string, string, string], BoostOrder>,
+  'submitBoostOrderWithCoin' : ActorMethod<
+    [string, string, string, string, string],
+    BoostOrder
+  >,
+  'submitTxHash' : ActorMethod<
+    [string, string],
+    { 'ok' : BoostOrder } |
+      { 'err' : string }
+  >,
   'updateBoostStatus' : ActorMethod<[string, string], boolean>,
+  'verifyAndActivateBoost' : ActorMethod<
+    [string],
+    { 'ok' : BoostOrder } |
+      { 'err' : string }
+  >,
+  'verifyTxHashOnChain' : ActorMethod<
+    [string],
+    { 'ok' : boolean } |
+      { 'err' : string }
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

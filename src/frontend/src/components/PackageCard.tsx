@@ -6,7 +6,9 @@ const FEATURE_TAGS: Record<string, string[]> = {
   starter: ["Quick", "Easy Start"],
   basic: ["Visible", "Daily Vol"],
   standard: ["Credible", "Organic"],
+  growth: ["Credible", "Organic"],
   pro: ["Trending", "Fast", "Popular"],
+  advanced: ["Top 5", "Viral"],
   elite: ["Top 5", "Viral", "60min"],
   mega: ["#1 Chart", "Dominate"],
   ultra: ["Whale", "Institutional"],
@@ -19,8 +21,10 @@ const DURATION_LABELS: Record<string, string> = {
   starter: "~2 hours",
   basic: "~6 hours",
   standard: "~12 hours",
+  growth: "~12 hours",
   pro: "~24 hours",
-  elite: "~36 hours",
+  advanced: "~36 hours",
+  elite: "~48 hours",
   mega: "~48 hours",
   ultra: "~72 hours",
   premium: "~96 hours",
@@ -51,7 +55,7 @@ export function PackageCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`relative rounded-xl p-4 border text-left card-interactive w-full ${selected ? "card-green-glow" : ""}`}
+      className={`relative rounded-xl p-4 border text-left w-full overflow-hidden${selected ? " card-green-glow" : " card-pkg-hover"}`}
       style={{
         backgroundColor: selected ? "rgba(0,255,136,0.07)" : "#111111",
         borderColor: selected
@@ -60,23 +64,37 @@ export function PackageCard({
             ? "rgba(0,255,136,0.25)"
             : "rgba(255,255,255,0.08)",
         transform: selected ? "scale(1.02)" : undefined,
+        transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)",
       }}
       data-ocid={`wizard.package.${index}`}
       aria-pressed={selected}
       aria-label={`${pkg.name} — ${pkg.targetVolumeFmt} volume for ${pkg.solCostFmt}`}
     >
+      {/* Shimmer scan-line on hover */}
+      <div
+        className="pkg-shimmer absolute inset-0 pointer-events-none"
+        aria-hidden
+      />
+
       {/* POPULAR badge */}
-      {isPopular && !selected && (
+      {isPopular && (
         <span
           className="absolute -top-2.5 left-1/2 -translate-x-1/2 font-mono text-[9px] font-bold tracking-widest px-3 py-0.5 rounded-full whitespace-nowrap"
-          style={{ backgroundColor: "#00ff88", color: "#0d0d0d" }}
+          style={{
+            backgroundColor: "#00ff88",
+            color: "#0d0d0d",
+            boxShadow: selected
+              ? "0 0 12px rgba(0,255,136,0.7)"
+              : "0 0 8px rgba(0,255,136,0.5)",
+            animation: "badgePulse 1.8s ease-in-out infinite",
+          }}
         >
           MOST POPULAR
         </span>
       )}
 
       {/* Tier badge + selected indicator */}
-      <div className="flex items-start justify-between mb-2 mt-1">
+      <div className="flex items-start justify-between mb-3 mt-1">
         <span
           className="inline-block px-2 py-0.5 rounded-full font-mono text-[9px] font-bold tracking-wider"
           style={{
@@ -92,10 +110,13 @@ export function PackageCard({
           {pkg.name.split(" ")[0].toUpperCase()}
         </span>
 
-        {selected && (
+        {selected ? (
           <span
             className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: "#00ff88" }}
+            style={{
+              backgroundColor: "#00ff88",
+              boxShadow: "0 0 8px rgba(0,255,136,0.6)",
+            }}
             aria-label="Selected"
           >
             <svg
@@ -115,35 +136,38 @@ export function PackageCard({
               />
             </svg>
           </span>
-        )}
-
-        {pkg.badge && !isPopular && (
+        ) : pkg.badge ? (
           <span
             className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-full"
             style={{
               backgroundColor: "rgba(0,255,136,0.15)",
               color: "#00ff88",
+              animation: "badgePulse 2.4s ease-in-out infinite",
             }}
           >
             {pkg.badge}
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Volume target */}
       <div
-        className="font-display text-xl font-bold mb-0.5"
+        className="font-display text-xl font-bold mb-1"
         style={{ color: selected ? "#ffffff" : "rgba(255,255,255,0.9)" }}
       >
         {pkg.targetVolumeFmt}
       </div>
 
-      {/* SOL cost */}
+      {/* SOL cost — large and prominent */}
       <div
-        className="font-mono text-sm font-bold mb-0.5"
+        className="font-mono font-bold mb-1"
         style={{
+          fontSize: "1.15rem",
           color: "#00ff88",
-          textShadow: selected ? "0 0 8px rgba(0,255,136,0.5)" : "none",
+          textShadow: selected
+            ? "0 0 16px rgba(0,255,136,0.8), 0 0 32px rgba(0,255,136,0.4)"
+            : "0 0 8px rgba(0,255,136,0.4)",
+          letterSpacing: "0.02em",
         }}
       >
         {pkg.solCostFmt}
